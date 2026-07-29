@@ -1,0 +1,6 @@
+[submodule "finest-lms-frontend"]
+	path = finest-lms-frontend
+	url = https://github.com/surendra965/finest-lms-frontend.git
+[submodule "finest-lms-backend"]
+	path = finest-lms-backend
+	url = https://github.com/DeveloperDhanush-git/finest-lms-backend.git
