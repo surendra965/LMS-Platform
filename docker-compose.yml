@@ -1,0 +1,71 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: lms-redis-db
+    restart: unless-stopped
+
+    volumes:
+      - redis-data:/data
+
+    networks:
+      - lms-network
+
+
+  backend:
+    image: surendra1211/lms-backend:latest
+    container_name: lms_backend
+    restart: unless-stopped
+
+    env_file:
+      - ./lms-backend/.env
+
+    ports:
+      - "5000:5000"
+
+    depends_on:
+      - redis
+
+    volumes:
+      - uploads:/app/storage/uploads
+      - processed:/app/storage/processed
+      - logs:/app/logs
+
+    networks:
+      - lms-network
+
+
+  frontend:
+    image: surendra1211/lms-frontend:v04
+    container_name: lms_frontend
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+
+    depends_on:
+      - backend
+
+    networks:
+      - lms-network
+
+
+volumes:
+
+  redis-data:
+    external: true
+
+  uploads:
+    name: lms-uploads
+
+  processed:
+    name: lms-processed
+
+  logs:
+    name: lms-logs
+
+
+networks:
+
+  lms-network:
+    external: true
