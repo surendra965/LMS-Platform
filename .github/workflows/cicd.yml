@@ -25,3 +25,9 @@ jobs:
       - name: Frontend install
         working-directory: lms-frontend
         run: npm ci
+
+      - name: Build backend Docker image
+        run: docker build -t lms-backend ./lms-backend
+
+      - name: Build frontend Docker image
+        run: docker build -t lms-frontend ./lms-frontend
