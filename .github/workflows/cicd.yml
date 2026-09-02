@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,6 +18,7 @@ jobs:
         with:
           node-version: 20
 
+      # CI - Install dependencies
       - name: Backend install
         working-directory: lms-backend
         run: npm ci
@@ -26,20 +27,54 @@ jobs:
         working-directory: lms-frontend
         run: npm ci
 
+      # Build Docker images
       - name: Build backend Docker image
         run: docker build -t surendra1211/lms-backend:latest ./lms-backend
 
       - name: Build frontend Docker image
-        run: docker build -t surendra1211/lms-frontend:latest ./lms-frontend
+        run: docker build --build-arg VITE_API_URL="" -t surendra1211/lms-frontend:latest ./lms-frontend
 
+      # Docker Hub authentication
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Push images
       - name: Push backend image
         run: docker push surendra1211/lms-backend:latest
 
       - name: Push frontend image
         run: docker push surendra1211/lms-frontend:latest
+
+      # AWS authentication
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::496336473993:role/GitHubActions-EKS-Deploy-Role
+          aws-region: ap-south-1
+
+      # Connect kubectl to EKS
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ap-south-1 --name lms-eks
+
+      # CD - Deploy backend
+      - name: Deploy backend to EKS
+        run: |
+          kubectl set image deployment/lms-backend \
+            lms-backend=surendra1211/lms-backend:latest \
+            -n lms
+
+      # CD - Deploy frontend
+      - name: Deploy frontend to EKS
+        run: |
+          kubectl set image deployment/lms-frontend \
+            lms-frontend=surendra1211/lms-frontend:latest \
+            -n lms
+
+      # Verify deployment
+      - name: Verify EKS rollout
+        run: |
+          kubectl rollout status deployment/lms-backend -n lms
+          kubectl rollout status deployment/lms-frontend -n lms
