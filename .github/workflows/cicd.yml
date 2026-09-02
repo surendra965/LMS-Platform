@@ -6,8 +6,8 @@ on:
       - main
 
 permissions:
-   id-token: write
-   contents: read
+  id-token: write
+  contents: read
 
 jobs:
   deploy:
@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       # CI - Install dependencies
       - name: Backend install
@@ -45,14 +45,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Push images
+      # Push Docker images
       - name: Push backend image
         run: docker push surendra1211/lms-backend:latest
 
       - name: Push frontend image
         run: docker push surendra1211/lms-frontend:latest
 
-      # AWS authentication
+      # Temporary OIDC debugging
+      - name: Debug GitHub OIDC
+        uses: github/actions-oidc-debugger@main
+
+      # AWS authentication using GitHub OIDC
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -82,3 +86,4 @@ jobs:
         run: |
           kubectl rollout status deployment/lms-backend -n lms
           kubectl rollout status deployment/lms-frontend -n lms
+
